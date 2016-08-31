@@ -189,7 +189,7 @@ auto range_transform(UnaryFunc f)
 */
 
 template <typename UnaryFunc>
-detail::inner_transform<UnaryFunc> range_transform(UnaryFunc f)
+detail::inner_transform<UnaryFunc> map(UnaryFunc f)
 {
     return detail::inner_transform<UnaryFunc>(f);
 }

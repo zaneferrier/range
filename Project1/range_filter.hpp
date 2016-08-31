@@ -171,7 +171,7 @@ auto range_transform(UnaryFunc f)
 */
 
 template <typename Predicate>
-detail::inner_filter<Predicate> range_filter(Predicate f)
+detail::inner_filter<Predicate> filter(Predicate f)
 {
     return detail::inner_filter<Predicate>(f);
 }

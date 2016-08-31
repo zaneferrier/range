@@ -16,8 +16,9 @@ private:
 
 public:
 
-    using iterator = typename range_type::iterator;
-    using reference = typename range_type::reference;
+    using iterator   = typename range_type::iterator;
+    using reference  = typename range_type::reference;
+    using value_type = typename range_type::value_type;
 
     range_slice(Range&& c, std::size_t from, std::size_t to)
         : begin_(c.begin() + from),
@@ -25,41 +26,6 @@ public:
     { }
 
     ~range_slice() = default;
-
-    reference operator*()
-    {
-        return *begin_;
-    }
-
-    const reference operator*() const
-    {
-        return *begin_;
-    }
-
-    range_slice& operator++()
-    {
-        ++begin_;
-        return *this;
-    }
-
-    range_slice operator++(int)
-    {
-        range_slice cpy(*this);
-        ++(*this);
-        return cpy;
-    }
-
-    range_slice& operator+=(std::size_t n)
-    {
-        begin_ += n;
-        return *this;
-    }
-
-    range_slice& operator-=(std::size_t n)
-    {
-        begin_ -= n;
-        return *this;
-    }
 
     iterator begin()
     {
@@ -79,7 +45,7 @@ private:
 
 } // end namespace detail
 
-auto range_copy(std::size_t from, std::size_t to)
+auto slice(std::size_t from, std::size_t to)
 {
     return [from, to](auto&& container) 
     { 
@@ -90,7 +56,7 @@ auto range_copy(std::size_t from, std::size_t to)
 }
 
 template <typename Range>
-detail::range_slice<Range> range_copy(Range&& c, std::size_t from, std::size_t to)
+detail::range_slice<Range> slice(Range&& c, std::size_t from, std::size_t to)
 {
     using iterator_type = typename Range::iterator;
 
@@ -106,7 +72,7 @@ detail::range_slice<Range> range_copy(Range&& c, std::size_t from, std::size_t t
 }
 
 template <typename Range>
-auto operator|(Range&& c, decltype(range_copy(0, 0)) adaptor)
+auto operator|(Range&& c, decltype(slice(0, 0)) adaptor)
 {
     return adaptor(std::forward<Range>(c));
 }
