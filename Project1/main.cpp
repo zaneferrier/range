@@ -27,8 +27,8 @@ int main()
 
     auto filt = x | adaptor::range_filter([](int x) { return x % 2 == 1; })
                   | adaptor::range_transform([](int x) { return x * 2; });
-    
+
     for (auto value : filt) {
-        std::cout << value << '\n';
+       std::cout << value << '\n';
     }
 }

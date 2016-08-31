@@ -12,10 +12,16 @@ template <typename Range, typename UnaryFunc>
 struct range_map;
 
 template <typename Range>
-using iterator_category_t = typename std::iterator_traits<typename Range::iterator>::iterator_category;
+using iterator_category_t = 
+    typename std::iterator_traits<
+        typename std::remove_reference<Range>::type
+    ::iterator>::iterator_category;
 
 template <typename Range>
-using difference_type_t = typename std::iterator_traits<typename Range::iterator>::difference_type;
+using difference_type_t = 
+    typename std::iterator_traits<
+        typename std::remove_reference<Range>::type
+    ::iterator>::difference_type;
 
 template <typename Range, typename UnaryFunc>
 struct range_map_iterator
@@ -27,11 +33,15 @@ struct range_map_iterator
 {
 private:
 
+    using range_type     = typename std::remove_reference<Range>::type;
     using self_type      = range_map_iterator<Range, UnaryFunc>;
     using range_map_type = range_map<Range, UnaryFunc>;
-    using base_iterator  = typename Range::iterator;
+    using base_iterator  = typename range_type::iterator;
 
 public:
+
+    using value_type = typename std::iterator_traits<base_iterator>::value_type;
+    using iterator_category = iterator_category_t<Range>;
 
     range_map_iterator(range_map_type& r, base_iterator where)
         : parent_(r),
@@ -110,7 +120,8 @@ struct range_map
 {
     friend struct range_map_iterator<Range, UnaryFunc>;
 
-    using base_iterator = typename Range::iterator;
+    using range_type = typename std::remove_reference<Range>::type;
+    using base_iterator = typename range_type::iterator;
     using base_value = typename std::iterator_traits<base_iterator>::value_type;
     using return_type = std::result_of_t<UnaryFunc(base_value)>;
 
@@ -120,8 +131,8 @@ public:
     using value_type = std::remove_reference_t<return_type>;
     using reference = std::add_lvalue_reference_t<value_type>;
 
-    range_map(Range& r, UnaryFunc func)
-        : range_(r),
+    range_map(Range&& r, UnaryFunc func)
+        : range_(std::forward<Range>(r)),
           func_(func)
     { }
 
@@ -137,8 +148,8 @@ public:
 
 private:
 
-    Range&    range_;
-    UnaryFunc func_;
+    Range&&    range_;
+    UnaryFunc  func_;
 };
 
 template <typename UnaryFunc>
@@ -151,9 +162,11 @@ struct inner_transform
     { }
 
     template <typename Range>
-    auto operator()(Range& r)
+    auto operator()(Range&& r)
     {
-        return detail::range_map<Range, UnaryFunc>(r, f_);
+        return detail::range_map<Range, UnaryFunc>(
+            std::forward<Range>(r), f_
+        );
     }
 };
 
@@ -178,14 +191,13 @@ auto range_transform(UnaryFunc f)
 template <typename UnaryFunc>
 detail::inner_transform<UnaryFunc> range_transform(UnaryFunc f)
 {
-
     return detail::inner_transform<UnaryFunc>(f);
 }
 
 template <typename Range, typename UnaryFunc>
-auto operator|(Range& c, detail::inner_transform<UnaryFunc> inner)
+auto operator|(Range&& c, detail::inner_transform<UnaryFunc> inner)
 {
-    return inner(c);
+    return inner(std::forward<Range>(c));
 }
 
 } // end namespace adaptor

@@ -11,21 +11,36 @@ namespace detail
 template <typename Range, typename Predicate> 
 struct range_filter;
 
+template <typename Range>
+using value_type_t =
+    typename std::iterator_traits<
+        typename std::remove_reference<Range>::type
+    ::iterator>::value_type;
+
+template <typename Range>
+using difference_type_t = 
+    typename std::iterator_traits<
+        typename std::remove_reference<Range>::type
+    ::iterator>::difference_type;
+
 template <typename Range, typename Predicate>
 struct range_filter_iterator 
     : public std::iterator<
         std::forward_iterator_tag,
-        typename std::iterator_traits<typename Range::iterator>::value_type,
-        typename std::iterator_traits<typename Range::iterator>::difference_type
+        value_type_t<Range>,
+        difference_type_t<Range>
       >
 {
 private:
 
+    using range_type        = typename std::remove_reference<Range>::type;
     using self_type         = range_filter_iterator<Range, Predicate>;
     using range_filter_type = range_filter<Range, Predicate>;
-    using base_iterator     = typename Range::iterator;
+    using base_iterator     = typename range_type::iterator;
 
 public:
+
+    using reference = typename std::iterator_traits<base_iterator>::reference;
 
     range_filter_iterator(range_filter_type& r, base_iterator where)
         : parent_(r),
@@ -50,8 +65,8 @@ public:
     self_type& operator--()
     {
         --current_;
-        while (current_ != parent_.range_.begin() && !parent_.func_(*current)) { 
-            --current; 
+        while (current_ != parent_.range_.begin() && !parent_.func_(*current_)) { 
+            --current_; 
         }
         return *this;
     }
@@ -89,17 +104,17 @@ struct range_filter
 {
     friend struct range_filter_iterator<Range, Predicate>;
 
-    using base_iterator = typename Range::iterator;
+    using base_iterator = typename std::remove_reference_t<Range>::iterator;
     using base_value = typename std::iterator_traits<base_iterator>::value_type;
 
 public:
 
     using iterator   = range_filter_iterator<Range, Predicate>;
-    using value_type = typename Range::value_type;
-    using reference  = typename Range::reference;
+    using value_type = typename std::remove_reference_t<Range>::value_type;
+    using reference  = typename std::remove_reference_t<Range>::reference;
 
-    range_filter(Range& r, Predicate func)
-        : range_(r),
+    range_filter(Range&& r, Predicate func)
+        : range_(std::forward<Range>(r)),
           func_(func)
     { }
 
@@ -115,8 +130,8 @@ public:
 
 private:
 
-    Range&    range_;
-    Predicate func_;
+    Range&&    range_;
+    Predicate  func_;
 };
 
 template <typename Predicate>
@@ -129,9 +144,11 @@ struct inner_filter
     { }
 
     template <typename Range>
-    auto operator()(Range& r)
+    auto operator()(Range&& r)
     {
-        return detail::range_filter<Range, Predicate>(r, p_);
+        return detail::range_filter<Range, Predicate>(
+            std::forward<Range>(r), p_
+        );
     }
 };
 
@@ -160,9 +177,9 @@ detail::inner_filter<Predicate> range_filter(Predicate f)
 }
 
 template <typename Range, typename Predicate>
-auto operator|(Range& c, detail::inner_filter<Predicate> inner)
+auto operator|(Range&& c, detail::inner_filter<Predicate> inner)
 {
-    return inner(c);
+    return inner(std::forward<Range>(c));
 }
 
 } // end namespace adaptor

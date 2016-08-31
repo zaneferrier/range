@@ -10,12 +10,16 @@ namespace detail
 template <typename Range>
 struct range_slice
 {
+private:
+
+    using range_type = typename std::remove_reference_t<Range>;
+
 public:
 
-    using iterator = typename Range::iterator;
-    using reference = typename Range::reference;
+    using iterator = typename range_type::iterator;
+    using reference = typename range_type::reference;
 
-    range_slice(Range& c, std::size_t from, std::size_t to)
+    range_slice(Range&& c, std::size_t from, std::size_t to)
         : begin_(c.begin() + from),
           end_(c.begin() + to)
     { }
@@ -77,15 +81,16 @@ private:
 
 auto range_copy(std::size_t from, std::size_t to)
 {
-    return [from, to](auto& container) 
+    return [from, to](auto&& container) 
     { 
-        using container_type = std::remove_reference_t<decltype(container)>;
-        return detail::range_slice<container_type>(container, from, to); 
+        return detail::range_slice<decltype(container)>(
+            std::forward<decltype(container)>(container), from, to
+        ); 
     };
 }
 
 template <typename Range>
-detail::range_slice<Range> range_copy(Range& c, std::size_t from, std::size_t to)
+detail::range_slice<Range> range_copy(Range&& c, std::size_t from, std::size_t to)
 {
     using iterator_type = typename Range::iterator;
 
@@ -97,19 +102,13 @@ detail::range_slice<Range> range_copy(Range& c, std::size_t from, std::size_t to
         "Must have random access iterators for range_copy!"
     );
 
-    return detail::range_slice<Container>(c, from, to);
+    return detail::range_slice<Range>(std::forward<Range>(c), from, to);
 }
 
-template <typename Range> 
-detail::range_slice<Range> operator|(Range& c, decltype(range_copy(0, 0)) adaptor)
+template <typename Range>
+auto operator|(Range&& c, decltype(range_copy(0, 0)) adaptor)
 {
-    return adaptor(c);
+    return adaptor(std::forward<Range>(c));
 }
-
-/*template <typename Container, typename OtherAdaptor>
-auto operator|(detail::range_slice<Container> c, OtherAdaptor other)
-{
-    return detail::make_adaptor_chain(std::move(c), std::move(other));
-}*/
 
 } // end namespace adaptor
