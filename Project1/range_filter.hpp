@@ -1,5 +1,7 @@
 #pragma once
 
+#include "iterator_helpers.hpp"
+
 #include <iterator>
 #include <type_traits>
 
@@ -11,17 +13,6 @@ namespace detail
 template <typename Range, typename Predicate> 
 struct range_filter;
 
-template <typename Range>
-using value_type_t =
-    typename std::iterator_traits<
-        typename std::remove_reference<Range>::type
-    ::iterator>::value_type;
-
-template <typename Range>
-using difference_type_t = 
-    typename std::iterator_traits<
-        typename std::remove_reference<Range>::type
-    ::iterator>::difference_type;
 
 template <typename Range, typename Predicate>
 struct range_filter_iterator 

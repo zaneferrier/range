@@ -1,5 +1,7 @@
 #pragma once
 
+#include "iterator_helpers.hpp"
+
 #include <iterator>
 #include <type_traits>
 
@@ -10,18 +12,6 @@ namespace detail
 
 template <typename Range, typename UnaryFunc>
 struct range_map;
-
-template <typename Range>
-using iterator_category_t = 
-    typename std::iterator_traits<
-        typename std::remove_reference<Range>::type
-    ::iterator>::iterator_category;
-
-template <typename Range>
-using difference_type_t = 
-    typename std::iterator_traits<
-        typename std::remove_reference<Range>::type
-    ::iterator>::difference_type;
 
 template <typename Range, typename UnaryFunc>
 struct range_map_iterator
